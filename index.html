@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover" />
+<title>NEO 2.4</title>
+<meta name="theme-color" content="#0b0c10" />
+<link rel="manifest" href="manifest.json" />
+<link rel="icon" href="icons/favicon-32.png" />
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+<div id="app-root">
+
+  <!-- ================= LOGIN SCREEN ================= -->
+  <div id="login-screen">
+    <div class="orb">
+      <div class="dot blue"></div>
+      <div class="dot coral"></div>
+      <div class="dot amber"></div>
+      <div class="dot green"></div>
+    </div>
+    <div>
+      <h1>NEO 2.4</h1>
+      <p class="tagline">Your personal assistant, powered by your own Gemini API key.</p>
+    </div>
+
+    <div class="login-card">
+      <div>
+        <div class="field-label">Gemini API key</div>
+        <div class="key-row">
+          <input id="api-key-input" type="password" placeholder="Paste your Gemini API key" autocomplete="off" autocapitalize="off" spellcheck="false" />
+          <button id="toggle-key-visibility" type="button">Show</button>
+        </div>
+      </div>
+      <div id="login-error"></div>
+      <button id="login-btn" class="primary-btn">Continue</button>
+      <div class="login-hint">
+        Don't have a key? Get one free at
+        <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">aistudio.google.com/apikey</a>.
+        Your key is stored only on this device and is sent directly to Google's Gemini API — never to any other server.
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= MAIN APP SCREEN ================= -->
+  <div id="app-screen" class="hidden">
+    <div class="top-bar">
+      <button id="settings-btn" class="icon-btn" aria-label="Settings">⚙</button>
+      <div class="title">NEO 2.4</div>
+      <button id="clear-btn" class="icon-btn" aria-label="New conversation">＋</button>
+    </div>
+
+    <div class="hero" id="hero">
+      <div class="orb" id="hero-orb">
+        <div class="dot blue"></div>
+        <div class="dot coral"></div>
+        <div class="dot amber"></div>
+        <div class="dot green"></div>
+      </div>
+      <div id="hero-status">Tap the mic and say something</div>
+    </div>
+
+    <div id="transcript">
+      <div class="empty-state" id="empty-state">
+        Ask me anything, or tap the microphone to talk.
+      </div>
+    </div>
+
+    <div class="input-bar">
+      <textarea id="text-input" rows="1" placeholder="Message NEO…"></textarea>
+      <button id="mic-btn" aria-label="Voice input">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M12 15a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3Z" stroke="currentColor" stroke-width="1.8"/><path d="M19 11a7 7 0 0 1-14 0M12 18v3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+      </button>
+      <button id="send-btn" aria-label="Send" disabled>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M3 12l18-8-8 18-2-8-8-2Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- ================= SETTINGS MODAL ================= -->
+  <div id="settings-modal" class="modal-backdrop hidden">
+    <div class="modal-sheet">
+      <h2>Settings</h2>
+
+      <div class="settings-row">
+        <label>Gemini API key</label>
+        <input id="settings-api-key" type="password" placeholder="Gemini API key" autocomplete="off" spellcheck="false" />
+      </div>
+
+      <div class="settings-row">
+        <label>Model</label>
+        <select id="settings-model">
+          <option value="gemini-2.5-flash">gemini-2.5-flash (recommended)</option>
+          <option value="gemini-2.0-flash">gemini-2.0-flash</option>
+          <option value="gemini-2.5-pro">gemini-2.5-pro</option>
+        </select>
+      </div>
+
+      <div class="toggle-row">
+        <span>Speak responses out loud</span>
+        <label class="switch">
+          <input type="checkbox" id="settings-voice-toggle" checked />
+          <span class="track"></span>
+        </label>
+      </div>
+
+      <div class="modal-actions">
+        <button id="settings-save-btn" class="primary-btn">Save</button>
+        <button id="settings-close-btn" class="ghost-btn">Close</button>
+      </div>
+
+      <button id="logout-btn" class="danger-btn">Remove API key &amp; sign out</button>
+    </div>
+  </div>
+
+</div>
+<script src="script.js"></script>
+</body>
+</html>
