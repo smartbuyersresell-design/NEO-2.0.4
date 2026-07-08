@@ -2,7 +2,7 @@
   "use strict";
 
   // =========================================================================
-  // 1. CSS STYLES INJECTION
+  // 1. CSS STYLES INJECTION (ඇනිමේෂන් සහ ස්ටයිල්ස්)
   // =========================================================================
   const styleEl = document.createElement("style");
   styleEl.textContent = `
@@ -62,20 +62,17 @@
       background: var(--border);
     }
 
-    /* --- Advanced Orb Glowing & Animations --- */
-    .orb.thinking {
-      box-shadow: 0 0 25px rgba(255, 194, 76, 0.5);
-      transition: box-shadow 0.3s ease;
-    }
-    .orb.generating-image {
-      animation: imagePulse 1.5s infinite ease-in-out;
-      box-shadow: 0 0 25px rgba(76, 141, 255, 0.6);
+    /* --- බලහත්කාරයෙන් ඇනිමේෂන් ක්‍රියාත්මක කරන Keyframes --- */
+    @keyframes upgradedThinkingGlow {
+      0%, 100% { box-shadow: 0 0 15px rgba(255, 194, 76, 0.4); transform: scale(1); }
+      50% { box-shadow: 0 0 30px rgba(255, 194, 76, 0.8); transform: scale(1.03); }
     }
 
-    @keyframes imagePulse {
-      0%, 100% { transform: scale(1); filter: hue-rotate(0deg); }
-      50% { transform: scale(1.06); filter: hue-rotate(30deg); }
+    @keyframes upgradedImageGlow {
+      0%, 100% { box-shadow: 0 0 20px rgba(76, 141, 255, 0.5); transform: scale(1) rotate(0deg); }
+      50% { box-shadow: 0 0 40px rgba(76, 141, 255, 0.9); transform: scale(1.08) rotate(180deg); }
     }
+
     @keyframes upgradeFadeIn {
       from { opacity: 0; transform: translateY(5px); }
       to { opacity: 1; transform: translateY(0); }
@@ -94,6 +91,34 @@
     if (transcriptEl) transcriptEl.scrollTop = transcriptEl.scrollHeight;
   }
 
+  // --- Orb එකට Thinking ඇනිමේෂන් එක දැමීම ---
+  function startThinkingAnimation() {
+    if (heroOrb) {
+      heroOrb.style.animation = "upgradedThinkingGlow 1.2s infinite ease-in-out";
+      heroOrb.style.border = "2px solid var(--amber)";
+    }
+  }
+
+  // --- Orb එකට Image Generating ඇනිමේෂන් එක දැමීම ---
+  function startImageAnimation() {
+    if (heroOrb) {
+      heroOrb.style.animation = "upgradedImageGlow 1.5s infinite ease-in-out";
+      heroOrb.style.border = "2px solid var(--blue)";
+    }
+  }
+
+  // --- ඇනිමේෂන් නවතා පරණ තත්වයට පත් කිරීම ---
+  function resetOrbAnimation() {
+    if (heroOrb) {
+      heroOrb.style.animation = "";
+      heroOrb.style.border = "";
+      // මුල් script.js එකේ තියෙන default බ්‍රීදින්ග් එකට ඉඩ දීම
+      if (heroOrb.classList.contains("listening")) {
+        heroOrb.style.animation = "pulse 1.5s infinite ease-in-out";
+      }
+    }
+  }
+
   // --- Thinking Process පෙන්වීම ---
   function showThinkingProcess(text) {
     const emptyState = document.getElementById("empty-state");
@@ -106,6 +131,7 @@
     
     transcriptEl.appendChild(thoughtBox);
     scrollToBottom();
+    startThinkingAnimation(); // 👈 ඇනිමේෂන් එක පටන් ගන්නවා
   }
 
   function updateThinkingContent(text) {
@@ -116,17 +142,17 @@
   function finalizeThinking() {
     const box = document.getElementById("current-thought");
     if (box) box.id = ""; 
+    resetOrbAnimation(); // 👈 ඇනිමේෂන් එක නවත්වනවා
   }
 
-  // --- සුපිරි සහ විශ්වාසවන්ත Image Generation ක්‍රමය (No API Key Required) ---
+  // --- Image Generation ක්‍රියාවලිය ---
   async function generateImage(promptText) {
-    heroOrb.classList.add("generating-image");
+    startImageAnimation(); // 👈 Image Pulse ඇනිමේෂන් එක පටන් ගන්නවා
     heroStatus.textContent = "Creating your image...";
 
     const emptyState = document.getElementById("empty-state");
     if (emptyState) emptyState.remove();
 
-    // චැට් එකට Placeholder එකක් දැමීම
     const imageBubble = document.createElement("div");
     imageBubble.className = "bubble image-bubble";
     const uniqueId = "img-" + Date.now();
@@ -135,13 +161,9 @@
     scrollToBottom();
 
     try {
-      // URL එකට ගැළපෙන පරිදි ප්‍රොම්ප්ට් එක සකස් කිරීම
       const cleanPrompt = encodeURIComponent(promptText.toLowerCase().replace("generate image", "").replace("create image", "").trim());
-      
-      // Pollinations AI - නොමිලේ සහ වේගවත්ව පින්තූර සාදන සුපිරි API එකක්
       const imgSrc = `https://image.pollinations.ai/p/${cleanPrompt}?width=512&height=512&seed=${Math.floor(Math.random() * 100000)}&nologo=true`;
 
-      // පින්තූරය load වන තෙක් මදක් රැඳී සිටීම
       const imgCheck = new Image();
       imgCheck.src = imgSrc;
       
@@ -153,7 +175,6 @@
 
         document.getElementById(`dl-${uniqueId}`)?.addEventListener("click", async () => {
           try {
-            // කෙලින්ම ෆෝන් එකට ඩවුන්ලෝඩ් කර ගැනීමට සැලැස්වීම
             const response = await fetch(imgSrc);
             const blob = await response.blob();
             const blobUrl = window.URL.createObjectURL(blob);
@@ -163,12 +184,11 @@
             a.click();
             window.URL.revokeObjectURL(blobUrl);
           } catch (e) {
-            // Backup download method αν block වෙලා තිබුණොත්
             window.open(imgSrc, '_blank');
           }
         });
         
-        heroOrb.classList.remove("generating-image");
+        resetOrbAnimation(); // 👈 ඇනිමේෂන් එක රීසෙට් කරනවා
         heroStatus.textContent = "Tap the mic and say something";
         scrollToBottom();
       };
@@ -180,20 +200,20 @@
     } catch (err) {
       imageBubble.className = "bubble error";
       imageBubble.textContent = "Image Generation Failed. Please try another prompt.";
-      heroOrb.classList.remove("generating-image");
+      resetOrbAnimation();
       heroStatus.textContent = "Tap the mic and say something";
       scrollToBottom();
     }
   }
 
-  // --- මුල් ක්‍රියාවලිය (sendMessage) Intercept කර පාලනය කිරීම ---
+  // --- sendMessage Intercept කිරීම ---
   const originalSendMessage = window.sendMessage;
 
   window.sendMessage = async function(text) {
     const trimmed = text.trim();
     if (!trimmed) return;
 
-    const imageKeywords = ["generate image", "create image", "draw", "make a picture", "generate a photo", "පින්තූරයක් හදන්න", "රූපයක් නිර්මාණය කරන්න"];
+    const imageKeywords = ["generate image", "create image", "draw", "make a picture", "generate a photo", "පินතූරයක් හදන්න", "රූපයක් නිර්මාණය කරන්න"];
     const isImageRequest = imageKeywords.some(keyword => trimmed.toLowerCase().includes(keyword));
 
     if (isImageRequest) {
