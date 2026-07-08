@@ -2,7 +2,7 @@
   "use strict";
 
   // =========================================================================
-  // 1. CSS STYLES INJECTION (ෆයිල් එක රන් වෙනකොට ස්ටයිල්ස් ටික auto එකතු වෙනවා)
+  // 1. CSS STYLES INJECTION
   // =========================================================================
   const styleEl = document.createElement("style");
   styleEl.textContent = `
@@ -43,6 +43,8 @@
       display: block;
       margin-bottom: 6px;
       box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+      background: #262a33;
+      min-height: 200px;
     }
     .image-download-btn {
       background: var(--surface-2);
@@ -82,7 +84,7 @@
   document.head.appendChild(styleEl);
 
   // =========================================================================
-  // 2. CORE LOGIC INTERCEPTOR (මුල් script.js එක වෙනස් නොකර මැදින් සම්බන්ධ වීම)
+  // 2. CORE LOGIC INTERCEPTOR
   // =========================================================================
   const transcriptEl = document.getElementById("transcript");
   const heroOrb = document.getElementById("hero-orb");
@@ -116,12 +118,8 @@
     if (box) box.id = ""; 
   }
 
-  // --- Imagen 3 හරහා රූප නිර්මාණය ---
+  // --- සුපිරි සහ විශ්වාසවන්ත Image Generation ක්‍රමය (No API Key Required) ---
   async function generateImage(promptText) {
-    const apiKey = localStorage.getItem("neo24_api_key");
-    if (!apiKey) return;
-
-    // Orb එක Image Generating ස්ටේට් එකට හැරවීම සහ ඇනිමේෂන් පණ ගැන්වීම
     heroOrb.classList.add("generating-image");
     heroStatus.textContent = "Creating your image...";
 
@@ -131,51 +129,57 @@
     // චැට් එකට Placeholder එකක් දැමීම
     const imageBubble = document.createElement("div");
     imageBubble.className = "bubble image-bubble";
+    const uniqueId = "img-" + Date.now();
     imageBubble.innerHTML = `<div style="color:var(--text-dim); font-size:14px; padding:6px;">🎨 Generating: "${promptText}"...</div>`;
     transcriptEl.appendChild(imageBubble);
     scrollToBottom();
 
     try {
-      // Google Imagen 3 API එක භාවිතා කිරීම
-      const url = `https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:generateImages`;
-      const res = await fetch(url, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-goog-api-key": apiKey
-        },
-        body: JSON.stringify({
-          prompt: promptText,
-          numberOfImages: 1,
-          outputMimeType: "image/jpeg",
-          aspectRatio: "1:1"
-        })
-      });
+      // URL එකට ගැළපෙන පරිදි ප්‍රොම්ප්ට් එක සකස් කිරීම
+      const cleanPrompt = encodeURIComponent(promptText.toLowerCase().replace("generate image", "").replace("create image", "").trim());
+      
+      // Pollinations AI - නොමිලේ සහ වේගවත්ව පින්තූර සාදන සුපිරි API එකක්
+      const imgSrc = `https://image.pollinations.ai/p/${cleanPrompt}?width=512&height=512&seed=${Math.floor(Math.random() * 100000)}&nologo=true`;
 
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error?.message || "Failed to generate image");
+      // පින්තූරය load වන තෙක් මදක් රැඳී සිටීම
+      const imgCheck = new Image();
+      imgCheck.src = imgSrc;
+      
+      imgCheck.onload = () => {
+        imageBubble.innerHTML = `
+          <img src="${imgSrc}" class="generated-image" alt="AI Generated Image" />
+          <button class="image-download-btn" id="dl-${uniqueId}">💾 Download Image</button>
+        `;
 
-      const base64Data = data.generatedImages[0].image.imageBytes;
-      const imgSrc = `data:image/jpeg;base64,${base64Data}`;
+        document.getElementById(`dl-${uniqueId}`)?.addEventListener("click", async () => {
+          try {
+            // කෙලින්ම ෆෝන් එකට ඩවුන්ලෝඩ් කර ගැනීමට සැලැස්වීම
+            const response = await fetch(imgSrc);
+            const blob = await response.blob();
+            const blobUrl = window.URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = blobUrl;
+            a.download = "neo-art.jpg";
+            a.click();
+            window.URL.revokeObjectURL(blobUrl);
+          } catch (e) {
+            // Backup download method αν block වෙලා තිබුණොත්
+            window.open(imgSrc, '_blank');
+          }
+        });
+        
+        heroOrb.classList.remove("generating-image");
+        heroStatus.textContent = "Tap the mic and say something";
+        scrollToBottom();
+      };
 
-      // සාර්ථකව ඉමේජ් එක ලැබුණු පසු බබල් එක අප්ඩේට් කිරීම
-      imageBubble.innerHTML = `
-        <img src="${imgSrc}" class="generated-image" alt="AI Generated Image" />
-        <button class="image-download-btn" id="dl-${Date.now()}">💾 Download Image</button>
-      `;
-
-      // ඩවුන්ලෝඩ් බටන් එක ක්‍රියාත්මක කිරීම
-      document.getElementById(`dl-${Date.now()}`)?.addEventListener("click", () => {
-        const a = document.createElement("a");
-        a.href = imgSrc;
-        a.download = "neo-art.jpg";
-        a.click();
-      });
+      imgCheck.onerror = () => {
+        throw new Error("Image source failed to load.");
+      };
 
     } catch (err) {
       imageBubble.className = "bubble error";
-      imageBubble.textContent = "Image Generation Failed: " + err.message;
-    } finally {
+      imageBubble.textContent = "Image Generation Failed. Please try another prompt.";
       heroOrb.classList.remove("generating-image");
       heroStatus.textContent = "Tap the mic and say something";
       scrollToBottom();
@@ -189,12 +193,10 @@
     const trimmed = text.trim();
     if (!trimmed) return;
 
-    // Image එකක් හදන්න කියන සිංහල/ඉංග්‍රීසි Keywords තිබේදැයි බැලීම
     const imageKeywords = ["generate image", "create image", "draw", "make a picture", "generate a photo", "පින්තූරයක් හදන්න", "රූපයක් නිර්මාණය කරන්න"];
     const isImageRequest = imageKeywords.some(keyword => trimmed.toLowerCase().includes(keyword));
 
     if (isImageRequest) {
-      // පරිශීලකයාගේ ඉල්ලීම චැට් එකට ඇතුලත් කිරීම
       const emptyState = document.getElementById("empty-state");
       if (emptyState) emptyState.remove();
       
@@ -203,7 +205,6 @@
       userBubble.textContent = trimmed;
       transcriptEl.appendChild(userBubble);
       
-      // ඉන්පුට් බොක්ස් එක හිස් කිරීම
       const textInput = document.getElementById("text-input");
       if (textInput) {
         textInput.value = "";
@@ -212,14 +213,12 @@
 
       await generateImage(trimmed);
     } else {
-      // සාමාන්‍ය ප්‍රශ්නයක් නම්, AI එක උත්තරය දෙනතෙක් "Thinking Process" එකක් මවා පෙන්වීම
       showThinkingProcess("Analyzing context and aligning core nodes...");
       
       setTimeout(() => {
         updateThinkingContent("Drafting the most accurate concise response...");
       }, 900);
 
-      // මුල් script.js එකේ sendMessage එක ක්‍රියාත්මක කරවීම
       if (originalSendMessage) {
         await originalSendMessage(text);
       }
