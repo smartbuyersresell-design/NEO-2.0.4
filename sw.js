@@ -3,6 +3,7 @@ const SHELL_FILES = [
   "./index.html",
   "./style.css",
   "./script.js",
+  "./pwa-upgrade.js",
   "./manifest.json",
   "./icons/icon-192.png",
   "./icons/icon-512.png",
