@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover" />
+  <title>NEO AI Chat - Powered by Ollama</title>
+  <meta name="theme-color" content="#0f0f1e" />
+  <meta name="description" content="Professional AI Chat application powered by Ollama - Free, Open-Source, Privacy-Focused" />
+  <link rel="manifest" href="manifest.json" />
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    /* Inline critical CSS for instant rendering */
+    :root {
+      --bg: #0f0f1e;
+      --surface: #1a1a2e;
+      --surface-2: #252541;
+      --border: #3a3a52;
+      --text: #e8e9f3;
+      --text-dim: #a8afc4;
+      --blue: #5b7cfa;
+      --coral: #ff6b6b;
+      --amber: #ffd93d;
+      --green: #51cf66;
+    }
+    * { box-sizing: border-box; }
+    html, body { height: 100%; margin: 0; padding: 0; background: var(--bg); color: var(--text); font-family: system-ui, -apple-system, sans-serif; }
+  </style>
+</head>
+<body>
+  <div id="app-root">
+
+    <!-- ============================================================ -->
+    <!-- SETUP SCREEN - Initial Ollama Configuration                 -->
+    <!-- ============================================================ -->
+    <div id="setup-screen">
+      <div class="setup-container">
+        <!-- Header with Logo/Branding -->
+        <div class="setup-header">
+          <div class="setup-orb">
+            <div class="dot blue"></div>
+            <div class="dot coral"></div>
+            <div class="dot amber"></div>
+            <div class="dot green"></div>
+          </div>
+          <h1>NEO AI Chat</h1>
+          <p class="setup-tagline">Powered by Open-Source Ollama</p>
+          <p class="setup-subtitle">Free • Privacy-First • No API Keys Required</p>
+        </div>
+
+        <!-- Setup Card -->
+        <div class="setup-card">
+          <h2>⚙️ Setup Your AI Assistant</h2>
+          
+          <!-- Server URL Input -->
+          <div class="setup-section">
+            <label class="setup-label">Ollama Server URL</label>
+            <input 
+              id="ollama-url" 
+              type="text" 
+              placeholder="http://localhost:11434" 
+              value="http://localhost:11434"
+              spellcheck="false"
+              autocomplete="off"
+            />
+            <p class="setup-hint">Default: http://localhost:11434 (localhost)</p>
+          </div>
+
+          <!-- Model Selection -->
+          <div class="setup-section">
+            <label class="setup-label">Select AI Model</label>
+            <select id="model-select">
+              <option value="">🔄 Click "Test Connection" to load models...</option>
+            </select>
+            <p class="setup-hint" id="model-hint">Popular: Mistral • Llama 2 • Neural Chat</p>
+          </div>
+
+          <!-- Connection Test Button -->
+          <button id="test-connection-btn" class="secondary-btn" style="width: 100%;">
+            🔗 Test Connection
+          </button>
+
+          <!-- Connection Status Display -->
+          <div id="connection-status" class="connection-status-box"></div>
+
+          <!-- Start Button -->
+          <button id="setup-start-btn" class="primary-btn" style="width: 100%;" disabled>
+            ✨ Start Chatting
+          </button>
+
+          <!-- Footer Information -->
+          <div class="setup-footer">
+            <p class="setup-info-box">
+              <strong>📥 Don't have Ollama?</strong><br/>
+              Download it free from <a href="https://ollama.ai" target="_blank" rel="noopener noreferrer">ollama.ai</a>
+            </p>
+            <p class="setup-info-box">
+              <strong>🚀 Quick Start:</strong><br/>
+              1. Install Ollama<br/>
+              2. Run: <code>ollama pull mistral</code><br/>
+              3. Run: <code>ollama serve</code><br/>
+              4. Refresh this page
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============================================================ -->
+    <!-- MAIN APP SCREEN - Chat Interface                            -->
+    <!-- ============================================================ -->
+    <div id="app-screen" class="hidden">
+      <div class="app-container">
+
+        <!-- SIDEBAR - Conversations & Settings -->
+        <aside class="sidebar">
+          <!-- Sidebar Header -->
+          <div class="sidebar-header">
+            <div class="sidebar-orb">
+              <div class="dot blue"></div>
+              <div class="dot coral"></div>
+              <div class="dot amber"></div>
+              <div class="dot green"></div>
+            </div>
+            <h2>NEO</h2>
+          </div>
+
+          <!-- Conversations List -->
+          <div class="conversations-list">
+            <h3>💬 Conversations</h3>
+            <div id="convos-container"></div>
+            <button id="new-convo-btn" class="new-convo-btn">
+              + New Chat
+            </button>
+          </div>
+
+          <!-- Sidebar Footer - Actions -->
+          <div class="sidebar-footer">
+            <button id="sidebar-settings-btn" class="sidebar-btn" title="Settings">
+              ⚙️ Settings
+            </button>
+            <button id="sidebar-export-btn" class="sidebar-btn" title="Export conversation">
+              📥 Export
+            </button>
+            <button id="sidebar-clear-btn" class="sidebar-btn" title="Clear current chat">
+              🗑️ Clear
+            </button>
+          </div>
+        </aside>
+
+        <!-- MAIN CHAT AREA -->
+        <main class="chat-area">
+          <!-- Top Bar with Model Info -->
+          <div class="chat-header">
+            <div class="model-info">
+              <span class="model-badge" id="model-badge">
+                🤖 Model: Loading...
+              </span>
+              <span class="connection-indicator" id="connection-indicator" title="Connected to Ollama"></span>
+            </div>
+            <button id="menu-btn" class="icon-btn" title="More options">
+              ⋮
+            </button>
+          </div>
+
+          <!-- Hero Section (shown when no chat) -->
+          <div class="chat-hero" id="chat-hero">
+            <div class="chat-orb" id="chat-orb">
+              <div class="dot blue"></div>
+              <div class="dot coral"></div>
+              <div class="dot amber"></div>
+              <div class="dot green"></div>
+            </div>
+            <h2>What can I help you with?</h2>
+            <p id="hero-status">Ready to chat</p>
+            
+            <!-- Quick Action Buttons -->
+            <div class="quick-actions">
+              <button class="quick-action-btn" data-prompt="Explain quantum computing in simple terms">
+                📚 Explain Concepts
+              </button>
+              <button class="quick-action-btn" data-prompt="Write a creative short story about space exploration">
+                ✍️ Creative Writing
+              </button>
+              <button class="quick-action-btn" data-prompt="Help me learn Python basics">
+                💻 Coding Help
+              </button>
+              <button class="quick-action-btn" data-prompt="What are the best productivity tips?">
+                ⏰ Productivity Tips
+              </button>
+            </div>
+          </div>
+
+          <!-- Chat Transcript/Messages Area -->
+          <div id="transcript" class="transcript">
+            <div class="empty-state" id="empty-state">
+              🎯 Start a conversation or choose a quick action above!
+            </div>
+          </div>
+
+          <!-- Input Area -->
+          <div class="input-bar">
+            <!-- Main Input Controls -->
+            <div class="input-controls">
+              <button 
+                id="voice-input-btn" 
+                class="voice-btn" 
+                title="Click to use voice input"
+                aria-label="Voice input"
+              >
+                🎤
+              </button>
+              <textarea 
+                id="chat-input" 
+                rows="1" 
+                placeholder="Type your message... (Shift+Enter for new line)"
+                spellcheck="true"
+                autocomplete="on"
+              ></textarea>
+              <button 
+                id="send-btn" 
+                class="send-btn" 
+                title="Send message (Ctrl+Enter)"
+                aria-label="Send message"
+              >
+                📤
+              </button>
+            </div>
+
+            <!-- Secondary Actions -->
+            <div class="input-actions">
+              <button 
+                id="theme-toggle-btn" 
+                class="action-btn" 
+                title="Toggle light/dark theme"
+                aria-label="Toggle theme"
+              >
+                🌙
+              </button>
+              <button 
+                id="copy-btn" 
+                class="action-btn" 
+                title="Copy last response"
+                aria-label="Copy response"
+              >
+                📋
+              </button>
+            </div>
+          </div>
+        </main>
+      </div>
+    </div>
+
+    <!-- ============================================================ -->
+    <!-- SETTINGS MODAL - Configuration Options                      -->
+    <!-- ============================================================ -->
+    <div id="settings-modal" class="modal-backdrop hidden">
+      <div class="modal-sheet">
+        <!-- Modal Header -->
+        <div class="modal-header">
+          <h2>⚙️ Settings</h2>
+          <button class="close-btn" id="close-settings" title="Close settings">✕</button>
+        </div>
+
+        <!-- Tab Navigation -->
+        <div class="settings-tabs">
+          <button class="tab-btn active" data-tab="general" title="General settings">
+            General
+          </button>
+          <button class="tab-btn" data-tab="model" title="Model configuration">
+            Model
+          </button>
+          <button class="tab-btn" data-tab="appearance" title="Appearance options">
+            Appearance
+          </button>
+        </div>
+
+        <!-- GENERAL TAB -->
+        <div class="tab-content active" id="general-tab">
+          <div class="settings-group">
+            <label for="settings-url">🌐 Server URL</label>
+            <input 
+              id="settings-url" 
+              type="text" 
+              placeholder="http://localhost:11434"
+              spellcheck="false"
+            />
+            <p class="setting-description">Your Ollama server address</p>
+          </div>
+
+          <div class="settings-group">
+            <label for="auto-save-toggle">💾 Auto-Save Conversations</label>
+            <label class="toggle-switch">
+              <input type="checkbox" id="auto-save-toggle" checked />
+              <span class="toggle-track"></span>
+            </label>
+            <p class="setting-description">Automatically save your chats</p>
+          </div>
+
+          <div class="settings-group">
+            <label>🗑️ Clear Data</label>
+            <button id="clear-history-btn" class="danger-btn" style="width: 100%;">
+              Clear All Conversations
+            </button>
+            <p class="setting-description">This action cannot be undone</p>
+          </div>
+        </div>
+
+        <!-- MODEL TAB -->
+        <div class="tab-content" id="model-tab">
+          <div class="settings-group">
+            <label for="settings-model-select">🤖 Active Model</label>
+            <select id="settings-model-select"></select>
+            <p class="setting-description">Select which AI model to use</p>
+          </div>
+
+          <div class="settings-group">
+            <label for="temp-slider">🎲 Temperature (Creativity)</label>
+            <div class="slider-container">
+              <input 
+                type="range" 
+                id="temp-slider" 
+                min="0" 
+                max="2" 
+                step="0.1" 
+                value="0.7"
+              />
+              <span id="temp-value">0.7</span>
+            </div>
+            <p class="setting-description">Lower = more focused, Higher = more creative</p>
+          </div>
+
+          <div class="settings-group">
+            <label for="max-tokens-input">📏 Max Response Length</label>
+            <input 
+              type="number" 
+              id="max-tokens-input" 
+              value="2000"
+              min="100"
+              max="10000"
+              step="100"
+            />
+            <p class="setting-description">Maximum tokens in response (1 token ≈ 4 characters)</p>
+          </div>
+
+          <div class="settings-group">
+            <label for="system-prompt-input">📝 Custom System Prompt</label>
+            <textarea 
+              id="system-prompt-input" 
+              rows="3"
+              placeholder="You are a helpful AI assistant..."
+            ></textarea>
+            <p class="setting-description">Customize the AI's behavior (leave empty for default)</p>
+          </div>
+        </div>
+
+        <!-- APPEARANCE TAB -->
+        <div class="tab-content" id="appearance-tab">
+          <div class="settings-group">
+            <label>🎨 Theme</label>
+            <div class="theme-options">
+              <button class="theme-option active" data-theme="dark" title="Dark theme">
+                🌙 Dark
+              </button>
+              <button class="theme-option" data-theme="light" title="Light theme">
+                ☀️ Light
+              </button>
+              <button class="theme-option" data-theme="auto" title="System theme">
+                ⚙️ Auto
+              </button>
+            </div>
+          </div>
+
+          <div class="settings-group">
+            <label for="font-size-slider">📝 Font Size</label>
+            <div class="slider-container">
+              <input 
+                type="range" 
+                id="font-size-slider" 
+                min="12" 
+                max="18" 
+                value="14"
+              />
+              <span id="font-size-value">14px</span>
+            </div>
+          </div>
+
+          <div class="settings-group">
+            <label>🔊 Sound Effects</label>
+            <label class="toggle-switch">
+              <input type="checkbox" id="sound-toggle" checked />
+              <span class="toggle-track"></span>
+            </label>
+            <p class="setting-description">Play notification sounds</p>
+          </div>
+
+          <div class="settings-group">
+            <label>⌨️ Keyboard Shortcuts</label>
+            <div class="shortcuts-list">
+              <div class="shortcut">
+                <kbd>Enter</kbd> <span>Send message</span>
+              </div>
+              <div class="shortcut">
+                <kbd>Shift + Enter</kbd> <span>New line</span>
+              </div>
+              <div class="shortcut">
+                <kbd>Ctrl + K</kbd> <span>New conversation</span>
+              </div>
+              <div class="shortcut">
+                <kbd>Ctrl + ,</kbd> <span>Open settings</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Save Button -->
+        <div class="modal-actions">
+          <button id="save-settings-btn" class="primary-btn" style="flex: 1;">
+            ✓ Save Changes
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============================================================ -->
+    <!-- EXPORT MODAL - Export Conversation                          -->
+    <!-- ============================================================ -->
+    <div id="export-modal" class="modal-backdrop hidden">
+      <div class="modal-sheet">
+        <!-- Modal Header -->
+        <div class="modal-header">
+          <h2>📥 Export Conversation</h2>
+          <button class="close-btn" id="close-export" title="Close">✕</button>
+        </div>
+
+        <p class="export-description">Choose a format to download your conversation:</p>
+
+        <!-- Export Options -->
+        <div class="export-options">
+          <button class="export-btn" id="export-json" title="Export as JSON">
+            <span class="export-icon">📄</span>
+            <span class="export-label">JSON</span>
+            <span class="export-desc">Structured data format</span>
+          </button>
+
+          <button class="export-btn" id="export-markdown" title="Export as Markdown">
+            <span class="export-icon">📝</span>
+            <span class="export-label">Markdown</span>
+            <span class="export-desc">Formatted text with markup</span>
+          </button>
+
+          <button class="export-btn" id="export-txt" title="Export as plain text">
+            <span class="export-icon">📋</span>
+            <span class="export-label">Text</span>
+            <span class="export-desc">Plain text format</span>
+          </button>
+
+          <button class="export-btn" id="export-html" title="Export as HTML">
+            <span class="export-icon">🌐</span>
+            <span class="export-label">HTML</span>
+            <span class="export-desc">Viewable in browser</span>
+          </button>
+        </div>
+
+        <p class="export-footer" style="font-size: 12px; color: var(--text-dim); margin: 12px 0 0 0;">
+          Your conversations are stored locally in your browser. They are never sent to external servers.
+        </p>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Main Application Script -->
+  <script src="script.js"></script>
+
+  <!-- Analytics & Error Tracking (Optional) -->
+  <script>
+    // Simple error logger for debugging
+    window.addEventListener('error', (event) => {
+      console.error('Script error:', event.error);
+    });
+
+    // Service Worker Registration
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('sw.js').catch(err => {
+          console.log('SW registration failed:', err);
+        });
+      });
+    }
+  </script>
+</body>
+</html>
